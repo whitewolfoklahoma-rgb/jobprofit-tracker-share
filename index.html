@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProfitFlag — Contractor Job-Profit Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a222c; --panel2:#222d3a; --line:#2e3b4a;
+    --text:#e8eef4; --muted:#93a5b8; --accent:#f5a623; --accent2:#2fbf71;
+    --danger:#e5534b; --warn:#e8b93e; --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.45}
+  a{color:var(--accent)}
+  header.topbar{background:var(--panel);border-bottom:1px solid var(--line);padding:14px 18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:38px;height:38px;border-radius:9px;background:var(--accent);color:#14100a;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center}
+  .brand h1{font-size:18px;margin:0;line-height:1.15}
+  .brand .sub{color:var(--muted);font-size:12.5px}
+  nav.tabs{display:flex;gap:6px;flex-wrap:wrap}
+  nav.tabs button{background:transparent;border:1px solid var(--line);color:var(--muted);padding:7px 14px;border-radius:20px;cursor:pointer;font-size:14px}
+  nav.tabs button.active{background:var(--accent);border-color:var(--accent);color:#14100a;font-weight:600}
+  main{max-width:1120px;margin:0 auto;padding:18px 14px 60px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .card .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .card .value{font-size:24px;font-weight:700;margin-top:4px}
+  .card .hint{color:var(--muted);font-size:12px;margin-top:2px}
+  .value.pos{color:var(--accent2)} .value.neg{color:var(--danger)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+  .panel h2{margin:0 0 12px;font-size:16px}
+  .panel h3{margin:16px 0 8px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  td.num,th.num{text-align:right;white-space:nowrap}
+  tr.clickable{cursor:pointer} tr.clickable:hover{background:var(--panel2)}
+  .badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11.5px;font-weight:600;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .badge.quoted{color:#7cc4ff;border-color:#2b4d6e}
+  .badge.progress{color:var(--warn);border-color:#6e5b1e}
+  .badge.done{color:#c792ea;border-color:#4b346e}
+  .badge.invoiced{color:#ffb86b;border-color:#6e4a1e}
+  .badge.paid{color:var(--accent2);border-color:#1e5c3d}
+  .badge.overdue{color:#fff;background:var(--danger);border-color:var(--danger)}
+  .badge.losing{color:#fff;background:var(--danger);border-color:var(--danger)}
+  .pos{color:var(--accent2)} .neg{color:var(--danger)}
+  .btn{background:var(--accent);color:#14100a;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.small{padding:5px 11px;font-size:13px;min-height:40px;}
+  .btn.danger{background:var(--danger);color:#fff}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar .spacer{flex:1}
+  select,input[type=text],input[type=number],input[type=date],textarea{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:14px;font-family:inherit}
+  input[type=text],input[type=number],input[type=date]{max-width:100%}
+  label.flabel{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr}}
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:flex-start;justify-content:center;z-index:50;overflow-y:auto;padding:18px 10px}
+  .modal-back.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;width:100%;max-width:560px;padding:20px}
+  .modal h2{margin:0 0 4px;font-size:17px}
+  .modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+  .empty{color:var(--muted);text-align:center;padding:28px 10px;border:1px dashed var(--line);border-radius:var(--radius)}
+  .alertbar{background:#3a1d1b;border:1px solid var(--danger);color:#ffb4ae;border-radius:var(--radius);padding:11px 14px;margin-bottom:14px;font-size:14px}
+  .demo-note{background:#2c2410;border:1px solid #6e5b1e;color:#f0d488;border-radius:var(--radius);padding:11px 14px;margin-bottom:14px;font-size:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
+  .kv div{background:var(--panel2);border-radius:8px;padding:10px 12px}
+  .kv .k{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
+  .kv .v{font-size:17px;font-weight:700;margin-top:2px}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--accent2);color:#06130b;padding:10px 18px;border-radius:8px;font-weight:600;display:none;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+  .toast.show{display:block}
+  .muted{color:var(--muted)} .small{font-size:12.5px}
+  .helpTopics{border-top:1px solid var(--line);margin-top:8px}
+  .helpTopics details{border-bottom:1px solid var(--line);padding:6px 0}
+  .helpTopics summary{cursor:pointer;font-weight:700;min-height:44px;padding:10px 0;font-size:15px}
+  .helpTopics p{font-size:14px;line-height:1.5;margin:2px 0 8px;color:var(--text)}
+  #helpEmailBtn{text-decoration:none;text-align:center;display:inline-block;min-height:48px;line-height:30px}
+  .tablewrap{overflow-x:auto}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:0 14px 30px}
+  /* ---------- Print: job statement ---------- */
+  #printArea{display:none}
+  @media print{
+    body{background:#fff;color:#000}
+    header.topbar,main,footer,.toast,.modal-back{display:none !important}
+    #printArea{display:block;font-family:Georgia,serif;color:#000;padding:10px}
+    #printArea h1{font-size:22px;margin:0}
+    #printArea h2{font-size:15px;margin:18px 0 6px;border-bottom:2px solid #000;padding-bottom:3px}
+    #printArea table{font-size:13px}
+    #printArea th,#printArea td{border-bottom:1px solid #bbb;color:#000}
+    #printArea .stmt-head{display:flex;justify-content:space-between;gap:20px;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:12px}
+    #printArea .tot{font-weight:700}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">$</div>
+    <div>
+      <h1 id="brandName">ProfitFlag</h1>
+      <div class="sub" id="brandSub">Contractor job-profit dashboard</div>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button id="tabDashboard" class="active" onclick="showView('dashboard')">Dashboard</button>
+    <button id="tabJobs" onclick="showView('jobs')">Jobs</button>
+    <button id="tabSettings" onclick="showView('settings')">Settings</button>
+  </nav>
+</header>
+<div style="text-align:center;padding:12px 16px;background:#fff8e6;border-bottom:2px solid #e8a13a;"><a href="https://travisbriggs.gumroad.com/l/uixtyu" target="_blank" rel="noopener" style="display:inline-block;background:#e8a13a;color:#1d2b2e;font-weight:800;font-size:17px;padding:10px 22px;border-radius:8px;text-decoration:none;">Get the full version — $69</a></div>
+
+
+<main>
+  <!-- ============ DASHBOARD VIEW ============ -->
+  <section id="view-dashboard">
+    <div id="demoBanner"></div>
+    <div id="alertArea"></div>
+    <div class="cards" id="statCards"></div>
+    <div class="panel">
+      <h2>Jobs at a glance</h2>
+      <div class="tablewrap"><table id="dashTable">
+        <thead><tr>
+          <th>Job</th><th>Customer</th><th>Status</th>
+          <th class="num">Quoted</th><th class="num">Collected</th><th class="num">Expenses</th>
+          <th class="num">Profit</th><th class="num">Margin</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div id="dashEmpty" class="empty" style="display:none">No jobs yet. Add your first job to start tracking profit.</div>
+    </div>
+  </section>
+
+  <!-- ============ JOBS VIEW ============ -->
+  <section id="view-jobs" style="display:none">
+    <div class="toolbar">
+      <button class="btn" onclick="openJobModal()">+ New Job</button>
+      <select id="filterStatus" onchange="renderJobs()">
+        <option value="">All statuses</option>
+        <option value="quoted">Quoted</option>
+        <option value="progress">In progress</option>
+        <option value="done">Done</option>
+        <option value="invoiced">Invoiced</option>
+        <option value="paid">Paid</option>
+      </select>
+      <input type="text" id="filterText" placeholder="Search customer or job…" oninput="renderJobs()" style="flex:1;min-width:160px">
+      <span class="spacer"></span>
+      <button class="btn ghost small" onclick="exportJobsCSV()">Export jobs CSV (spreadsheet)</button>
+      <button class="btn ghost small" onclick="exportExpensesCSV()">Export expenses CSV (spreadsheet)</button>
+    </div>
+    <div class="panel">
+      <div class="tablewrap"><table id="jobsTable">
+        <thead><tr>
+          <th>Job</th><th>Customer</th><th>Status</th><th>Due</th>
+          <th class="num">Quoted</th><th class="num">Balance due</th><th class="num">Profit</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div id="jobsEmpty" class="empty" style="display:none">No jobs match. Click “+ New Job” to add one.</div>
+    </div>
+  </section>
+
+  <!-- ============ JOB DETAIL VIEW ============ -->
+  <section id="view-detail" style="display:none">
+    <div class="toolbar">
+      <button class="btn ghost small" onclick="showView('jobs')">← All jobs</button>
+      <span class="spacer"></span>
+      <button class="btn ghost small" onclick="openJobModal(ui.selectedJobId)">Edit job</button>
+      <button class="btn ghost small" onclick="printStatement()">🖨 Print statement / invoice</button>
+      <button class="btn danger small" onclick="deleteJob(ui.selectedJobId)">Delete job</button>
+    </div>
+    <div id="detailBody"></div>
+  </section>
+
+  <!-- ============ SETTINGS VIEW ============ -->
+  <section id="view-settings" style="display:none">
+    <div class="panel">
+      <h2>Business settings</h2>
+      <label class="flabel">Company name</label>
+      <input type="text" id="setCompany" style="width:100%" placeholder="e.g. Acme Contracting LLC">
+      <label class="flabel">Trade</label>
+      <input type="text" id="setTrade" style="width:100%" placeholder="e.g. Tree service, Roofing, Remodeling, Landscaping…">
+      <label class="flabel">Currency</label>
+      <input type="text" value="USD ($)" disabled style="width:100%">
+      <div style="margin-top:16px"><button class="btn" onclick="saveSettings()">Save settings</button></div>
+      <p class="muted small">Your company name and trade appear on printed customer statements. Everything is stored only in this browser on this device — no account, no cloud, no subscription.</p>
+    </div>
+    <div class="panel">
+      <h2>Data</h2>
+      <div class="toolbar" style="margin:0">
+        <button class="btn ghost small" onclick="exportBackupJSON()">Export backup (JSON)</button>
+        <button class="btn ghost small" onclick="document.getElementById('importFile').click()">Import backup</button>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importBackupJSON(this)">
+        <button class="btn ghost small" id="clearDemoBtn" onclick="clearDemoData()">Clear demo data</button>
+        <button class="btn danger small" onclick="wipeAll()">Erase ALL data</button>
+      </div>
+      <p class="muted small" id="backupMsg"></p>
+      <div class="toolbar" style="margin:8px 0 0">
+        <button class="btn ghost small" onclick="exportJobsCSV()">Export jobs CSV (spreadsheet)</button>
+        <button class="btn ghost small" onclick="exportExpensesCSV()">Export expenses CSV (spreadsheet)</button>
+      </div>
+      <p class="muted small">The JSON backup is the restorable one — Import backup brings it back on this or a new device. The CSVs are exports for spreadsheets and your accountant; they can’t be restored into the app. “Erase ALL data” removes every job, payment, expense and your settings from this browser.</p>
+    </div>
+    <div class="panel" id="helpSection">
+      <h2>❓ Help &amp; support</h2>
+      <p class="small" id="helpVersionLine">ProfitFlag v1.1</p>
+      <p class="small">New to ProfitFlag, or stuck on something? Start with these short how-tos — they cover the jobs the app is used for every day.</p>
+      <div class="helpTopics">
+        <details id="helpTopicAddJob"><summary>Add a job</summary>
+          <p>1) Open the <b>Jobs</b> tab and tap <b>+ New Job</b>. 2) Fill in the customer name and the job title or address — those two are required — then add the status, quoted amount, start and due dates, and any notes if you have them. 3) Tap <b>Save job</b>. The job appears in the Jobs list and on the Dashboard.</p>
+        </details>
+        <details id="helpTopicMoney"><summary>Log invoices, payments &amp; expenses (costs &amp; materials)</summary>
+          <p>1) Open a job from the Jobs list or the Dashboard to see its detail page. 2) Tap <b>+ Invoice</b>, <b>+ Payment</b>, or <b>+ Expense</b>. 3) Enter the amount and date, add a note, and for an expense pick a category (Labor, Materials, Fuel, Equipment, Disposal / dump fees, Subcontractors, or Other), then tap <b>Save</b>. Every entry shows in that job&rsquo;s ledger, and you can remove one with its <b>✕</b> button. If a payment brings an invoiced job&rsquo;s balance to $0, the job flips to Paid on its own.</p>
+        </details>
+        <details id="helpTopicVoice"><summary>Enter by voice (dictation)</summary>
+          <p>Tap the 🎤 button beside any name, note, or amount field and say the entry out loud — the words land in the field exactly as if you typed them, and nothing is saved until you tap Save. For amounts, plain spoken numbers work: say &ldquo;four hundred twenty dollars&rdquo; and the field gets 420. Voice entry needs a browser or device with speech recognition (it works in the Google Play edition and on the hosted web version). Where voice isn&rsquo;t available, the mic button shows a short note and typing works as always.</p>
+        </details>
+        <details id="helpTopicProfit"><summary>Read your profit</summary>
+          <p>The <b>Dashboard</b> shows totals across all jobs: quoted pipeline, invoiced, collected, outstanding, total expenses, and total profit. Open any job for its own figures: quoted, invoiced, collected, balance due, expenses, profit, and margin. Profit is the money you have collected minus your expenses, and margin is that profit as a share of what you collected. A job whose expenses pass its quote is flagged <b>LOSING $</b>, and a job past due with a balance still owed is flagged <b>OVERDUE</b>.</p>
+        </details>
+        <details id="helpTopicPrint"><summary>Print a statement for a customer</summary>
+          <p>1) Open the job. 2) Tap <b>🖨 Print statement / invoice</b> at the top of the job detail page. The statement shows your company name and trade (from Settings), the job, and its charges and payments only — your internal expenses and costs never appear on it.</p>
+        </details>
+        <details id="helpTopicBackup"><summary>Back up &amp; restore your data</summary>
+          <p>Go to <b>Settings → Data</b> and tap <b>Export backup (JSON)</b> — that JSON file is the restorable backup. To bring it back on this or a new device, tap <b>Import backup</b> in the same place and pick that file; importing replaces the jobs and settings currently in the app, so the app asks you to confirm first. The CSV exports are for spreadsheets and your accountant — they cannot be restored into the app.</p>
+        </details>
+      </div>
+      <p class="small"><b>Your data stays on this device</b> — ProfitFlag stores everything only in this browser on this device, with no account and no cloud. Back it up with <b>Settings → Data → Export backup (JSON)</b>; that file is also how you move your records to a new device.</p>
+      <div class="toolbar" style="margin:12px 0 0"><a id="helpEmailBtn" class="btn" href="mailto:whitewolfbackoffice@gmail.com?subject=ProfitFlag%20help%20%E2%80%94%20v1.1&amp;body=Tell%20us%20what%20you%20were%20trying%20to%20do%20and%20what%20happened%3A%0A%0A">✉️ Email us for help</a></div>
+      <p class="muted small">The button opens your own mail app with our address and the app version filled in — nothing is sent until you press send there.</p>
+    </div>
+  </section>
+</main>
+
+<footer>ProfitFlag · Works offline · Your data never leaves this device</footer>
+<div class="toast" id="toast"></div>
+<div id="printArea"></div>
+
+<!-- ============ JOB MODAL ============ -->
+<div class="modal-back" id="jobModal">
+  <div class="modal">
+    <h2 id="jobModalTitle">New job</h2>
+    <input type="hidden" id="jobId">
+    <label class="flabel">Customer name *</label>
+    <input type="text" id="jobCustomer" style="width:100%" placeholder="e.g. Johnson Residence">
+    <label class="flabel">Job title / address *</label>
+    <input type="text" id="jobTitle" style="width:100%" placeholder="e.g. Oak removal — 412 Lakeview Dr">
+    <div class="grid2">
+      <div><label class="flabel">Status</label>
+        <select id="jobStatus" style="width:100%">
+          <option value="quoted">Quoted</option>
+          <option value="progress">In progress</option>
+          <option value="done">Done</option>
+          <option value="invoiced">Invoiced</option>
+          <option value="paid">Paid</option>
+        </select></div>
+      <div><label class="flabel">Quoted amount ($)</label>
+        <input inputmode="decimal" type="number" id="jobQuoted" min="0" step="0.01" style="width:100%" placeholder="0.00"></div>
+      <div><label class="flabel">Start date</label>
+        <input type="date" id="jobStart" style="width:100%"></div>
+      <div><label class="flabel">Due date</label>
+        <input type="date" id="jobDue" style="width:100%"></div>
+    </div>
+    <label class="flabel">Notes</label>
+    <textarea id="jobNotes" rows="2" style="width:100%" placeholder="Access notes, scope details…"></textarea>
+    <div class="actions">
+      <button class="btn ghost" onclick="closeModal('jobModal')">Cancel</button>
+      <button class="btn" onclick="saveJob()">Save job</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MONEY MODAL (invoice / payment / expense) ============ -->
+<div class="modal-back" id="moneyModal">
+  <div class="modal">
+    <h2 id="moneyModalTitle">Add entry</h2>
+    <input type="hidden" id="moneyKind"><input type="hidden" id="moneyId">
+    <div class="grid2">
+      <div><label class="flabel">Amount ($) *</label>
+        <input inputmode="decimal" type="number" id="moneyAmount" min="0" step="0.01" style="width:100%" placeholder="0.00"></div>
+      <div><label class="flabel">Date</label>
+        <input type="date" id="moneyDate" style="width:100%"></div>
+    </div>
+    <div id="expenseCatWrap" style="display:none">
+      <label class="flabel">Category</label>
+      <select id="moneyCategory" style="width:100%">
+        <option value="labor">Labor</option>
+        <option value="materials">Materials</option>
+        <option value="fuel">Fuel</option>
+        <option value="equipment">Equipment</option>
+        <option value="disposal">Disposal / dump fees</option>
+        <option value="subcontractors">Subcontractors</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <label class="flabel">Note</label>
+    <input type="text" id="moneyNote" style="width:100%" placeholder="e.g. Invoice #104, Cash payment, Fuel — truck 2">
+    <div class="actions">
+      <button class="btn ghost" onclick="closeModal('moneyModal')">Cancel</button>
+      <button class="btn" onclick="saveMoney()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================= ProfitFlag =================
+   Single-file app. Data lives in localStorage under one key.
+   Core math (jobStats / totals) is pure and unit-tested.   */
+
+var APP_VERSION = "1.1";
+var STORAGE_KEY = "jobprofit_tracker_v1";
+var STATUSES = { quoted:"Quoted", progress:"In progress", done:"Done", invoiced:"Invoiced", paid:"Paid" };
+var CATEGORIES = { labor:"Labor", materials:"Materials", fuel:"Fuel", equipment:"Equipment",
+                   disposal:"Disposal / dump fees", subcontractors:"Subcontractors", other:"Other" };
+
+function uid(){ return "id" + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function num(v){ var n = parseFloat(v); return isFinite(n) ? n : 0; }
+function round2(n){ return Math.round((n + Number.EPSILON) * 100) / 100; }
+function todayISO(){ var d = new Date(); return d.getFullYear() + "-" +
+  String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function fmtMoney(n){
+  var neg = n < 0; var s = Math.abs(round2(n)).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  return (neg ? "-$" : "$") + s;
+}
+function fmtDate(iso){
+  if(!iso) return "—";
+  var p = iso.split("-"); if(p.length !== 3) return iso;
+  return p[1] + "/" + p[2] + "/" + p[0];
+}
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+
+/* ---------- Pure math ---------- */
+function sumList(list){ var t = 0; for(var i=0;i<list.length;i++) t += num(list[i].amount); return round2(t); }
+
+function jobStats(job){
+  var invoiced  = sumList(job.invoices || []);
+  var collected = sumList(job.payments || []);
+  var expenses  = sumList(job.expenses || []);
+  var profit    = round2(collected - expenses);
+  /* Margin is profit as a share of money actually collected; falls back to quote when nothing collected yet. */
+  var base = collected > 0 ? collected : num(job.quoted);
+  var margin = base > 0 ? round2((profit / base) * 100) : 0;
+  var balanceDue = round2(Math.max(invoiced - collected, 0));
+  var losing = expenses > num(job.quoted) && num(job.quoted) > 0;
+  return { quoted: round2(num(job.quoted)), invoiced: invoiced, collected: collected,
+           expenses: expenses, profit: profit, margin: margin,
+           balanceDue: balanceDue, losing: losing };
+}
+
+function isOverdue(job, today){
+  if(!job.due) return false;
+  if(job.status === "paid") return false;
+  var s = jobStats(job);
+  if(job.status === "invoiced" || job.status === "done" || job.status === "progress"){
+    return job.due < today && s.balanceDue > 0 || (job.due < today && job.status !== "quoted" && s.collected < s.invoiced);
+  }
+  return false;
+}
+
+function totals(jobs){
+  var t = { quotedPipeline:0, invoiced:0, collected:0, outstanding:0, expenses:0, profit:0, losingCount:0, overdueCount:0 };
+  var today = todayISO();
+  jobs.forEach(function(j){
+    var s = jobStats(j);
+    if(j.status !== "paid") t.quotedPipeline = round2(t.quotedPipeline + s.quoted);
+    t.invoiced    = round2(t.invoiced + s.invoiced);
+    t.collected   = round2(t.collected + s.collected);
+    t.outstanding = round2(t.outstanding + s.balanceDue);
+    t.expenses    = round2(t.expenses + s.expenses);
+    if(s.losing) t.losingCount++;
+    if(isOverdue(j, today)) t.overdueCount++;
+  });
+  t.profit = round2(t.collected - t.expenses);
+  return t;
+}
+
+/* ---------- State ---------- */
+function emptyState(){
+  return { settings:{ company:"", trade:"" }, jobs:[], demoSeeded:false };
+}
+function demoData(){
+  var t = todayISO();
+  function daysFromNow(n){ var d = new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+  return {
+    settings:{ company:"", trade:"" },
+    demoSeeded:true,
+    jobs:[
+      { id:"demo1", demo:true, customer:"Harper Residence", title:"Roof tear-off & re-shingle — 88 Pine St",
+        status:"paid", quoted:6800, start:daysFromNow(-21), due:daysFromNow(-14), notes:"Demo job — delete anytime.",
+        invoices:[{id:uid(), amount:6800, date:daysFromNow(-14), note:"Invoice #1001"}],
+        payments:[{id:uid(), amount:3400, date:daysFromNow(-14), note:"Deposit — check"},
+                  {id:uid(), amount:3400, date:daysFromNow(-10), note:"Final — card"}],
+        expenses:[{id:uid(), amount:1950, date:daysFromNow(-18), category:"materials", note:"Shingles & underlayment"},
+                  {id:uid(), amount:1600, date:daysFromNow(-16), category:"labor", note:"Crew — 2 days"},
+                  {id:uid(), amount:275,  date:daysFromNow(-15), category:"disposal", note:"Dump fees"},
+                  {id:uid(), amount:120,  date:daysFromNow(-17), category:"fuel", note:"Fuel"}] },
+      { id:"demo2", demo:true, customer:"Lakeside HOA", title:"Dock & deck repair — Marina Bay",
+        status:"progress", quoted:4200, start:daysFromNow(-3), due:daysFromNow(6), notes:"Demo job — delete anytime.",
+        invoices:[{id:uid(), amount:2100, date:daysFromNow(-3), note:"Invoice #1002 — 50% upfront"}],
+        payments:[{id:uid(), amount:2100, date:daysFromNow(-2), note:"Upfront payment"}],
+        expenses:[{id:uid(), amount:940, date:daysFromNow(-2), category:"materials", note:"Lumber & hardware"},
+                  {id:uid(), amount:480, date:daysFromNow(-1), category:"labor", note:"Crew — day 1"}] },
+      { id:"demo3", demo:true, customer:"Miller Property", title:"Fence line clearing & haul-off — County Rd 12",
+        status:"invoiced", quoted:1500, start:daysFromNow(-12), due:daysFromNow(-5), notes:"Demo job — costs ran over the quote.",
+        invoices:[{id:uid(), amount:1500, date:daysFromNow(-6), note:"Invoice #1003"}],
+        payments:[{id:uid(), amount:500, date:daysFromNow(-4), note:"Partial payment"}],
+        expenses:[{id:uid(), amount:800, date:daysFromNow(-10), category:"labor", note:"Crew — extra day"},
+                  {id:uid(), amount:450, date:daysFromNow(-9), category:"equipment", note:"Chipper rental"},
+                  {id:uid(), amount:310, date:daysFromNow(-8), category:"disposal", note:"Brush dump fees"},
+                  {id:uid(), amount:95,  date:daysFromNow(-10), category:"fuel", note:"Fuel"}] }
+    ]
+  };
+}
+
+var state = loadState();
+var ui = { view:"dashboard", selectedJobId:null };
+
+function loadState(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ var s = JSON.parse(raw); if(s && Array.isArray(s.jobs)){
+      /* Normalize partial/older saves so a missing piece can never white-screen the app. */
+      if(!s.settings || typeof s.settings !== "object") s.settings = { company:"", trade:"" };
+      s.jobs.forEach(function(j){
+        j.invoices = Array.isArray(j.invoices) ? j.invoices : [];
+        j.payments = Array.isArray(j.payments) ? j.payments : [];
+        j.expenses = Array.isArray(j.expenses) ? j.expenses : [];
+        if(!STATUSES[j.status]) j.status = "quoted";
+      });
+      return s;
+    } }
+  }catch(e){ /* corrupted storage → reseed */ }
+  var fresh = demoData();
+  saveState(fresh);
+  return fresh;
+}
+function saveState(s){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(s || state)); }catch(e){} }
+function findJob(id){ for(var i=0;i<state.jobs.length;i++) if(state.jobs[i].id === id) return state.jobs[i]; return null; }
+function hasDemo(){ return state.jobs.some(function(j){ return j.demo; }); }
+
+/* ---------- Rendering ---------- */
+function $(id){ return document.getElementById(id); }
+function toast(msg){
+  var t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, 2200);
+}
+function statusBadge(job){
+  var html = '<span class="badge ' + job.status + '">' + STATUSES[job.status] + '</span>';
+  if(isOverdue(job, todayISO())) html += ' <span class="badge overdue">OVERDUE</span>';
+  return html;
+}
+function showView(v){
+  ui.view = v;
+  ["dashboard","jobs","detail","settings"].forEach(function(name){
+    $("view-" + name).style.display = (name === v) ? "" : "none";
+  });
+  $("tabDashboard").classList.toggle("active", v === "dashboard");
+  $("tabJobs").classList.toggle("active", v === "jobs" || v === "detail");
+  $("tabSettings").classList.toggle("active", v === "settings");
+  if(v === "dashboard") renderDashboard();
+  if(v === "jobs") renderJobs();
+  if(v === "settings") renderSettings();
+  window.scrollTo(0,0);
+}
+
+function renderBrand(){
+  var c = state.settings.company;
+  $("brandName").textContent = c ? c : "ProfitFlag";
+  $("brandSub").textContent = state.settings.trade
+    ? state.settings.trade + " · ProfitFlag"
+    : "Contractor job-profit dashboard";
+}
+
+function renderDashboard(){
+  renderBrand();
+  var t = totals(state.jobs);
+  var banner = $("demoBanner");
+  if(hasDemo()){
+    banner.innerHTML = '<div class="demo-note"><span>👋 You\u2019re looking at <b>3 sample jobs</b> so you can see how everything works. Add your own jobs anytime — clear the samples when you\u2019re ready.</span>' +
+      '<button class="btn small" onclick="clearDemoData()">Clear demo data</button></div>';
+  } else banner.innerHTML = "";
+
+  var alerts = [];
+  if(t.losingCount > 0) alerts.push("⚠ " + t.losingCount + " job" + (t.losingCount>1?"s are":" is") + " over the quoted price — expenses exceed the quote.");
+  if(t.overdueCount > 0) alerts.push("⏰ " + t.overdueCount + " job" + (t.overdueCount>1?"s are":" is") + " past due with a balance still owed.");
+  $("alertArea").innerHTML = alerts.length ? '<div class="alertbar">' + alerts.join("<br>") + "</div>" : "";
+
+  var cards = [
+    { label:"Quoted pipeline", value: fmtMoney(t.quotedPipeline), hint:"Open jobs not yet paid" },
+    { label:"Invoiced", value: fmtMoney(t.invoiced), hint:"Total billed to customers" },
+    { label:"Collected", value: fmtMoney(t.collected), hint:"Money actually in hand" },
+    { label:"Outstanding", value: fmtMoney(t.outstanding), hint:"Invoiced, not yet collected" },
+    { label:"Total expenses", value: fmtMoney(t.expenses), hint:"Across all jobs" },
+    { label:"Total profit", value: fmtMoney(t.profit), hint:"Collected − expenses", cls: t.profit >= 0 ? "pos" : "neg" }
+  ];
+  $("statCards").innerHTML = cards.map(function(c){
+    return '<div class="card"><div class="label">' + c.label + '</div><div class="value ' + (c.cls||"") + '">' + c.value + '</div><div class="hint">' + c.hint + "</div></div>";
+  }).join("");
+
+  var tbody = $("dashTable").querySelector("tbody");
+  $("dashEmpty").style.display = state.jobs.length ? "none" : "";
+  tbody.innerHTML = state.jobs.map(function(j){
+    var s = jobStats(j);
+    return '<tr class="clickable" onclick="openJob(\'' + j.id + '\')">' +
+      "<td><b>" + esc(j.title) + "</b>" + (s.losing ? ' <span class="badge losing">LOSING $</span>' : "") + "</td>" +
+      "<td>" + esc(j.customer) + "</td>" +
+      "<td>" + statusBadge(j) + "</td>" +
+      '<td class="num">' + fmtMoney(s.quoted) + "</td>" +
+      '<td class="num">' + fmtMoney(s.collected) + "</td>" +
+      '<td class="num">' + fmtMoney(s.expenses) + "</td>" +
+      '<td class="num ' + (s.profit >= 0 ? "pos" : "neg") + '"><b>' + fmtMoney(s.profit) + "</b></td>" +
+      '<td class="num">' + (isFinite(s.margin) ? s.margin.toFixed(1) + "%" : "—") + "</td></tr>";
+  }).join("");
+}
+
+function renderJobs(){
+  renderBrand();
+  var fs = $("filterStatus").value, ft = ($("filterText").value || "").toLowerCase();
+  var rows = state.jobs.filter(function(j){
+    if(fs && j.status !== fs) return false;
+    if(ft && (j.customer + " " + j.title).toLowerCase().indexOf(ft) === -1) return false;
+    return true;
+  });
+  $("jobsEmpty").style.display = rows.length ? "none" : "";
+  $("jobsTable").querySelector("tbody").innerHTML = rows.map(function(j){
+    var s = jobStats(j);
+    return '<tr class="clickable" onclick="openJob(\'' + j.id + '\')">' +
+      "<td><b>" + esc(j.title) + "</b>" + (s.losing ? ' <span class="badge losing">LOSING $</span>' : "") + "</td>" +
+      "<td>" + esc(j.customer) + "</td><td>" + statusBadge(j) + "</td>" +
+      "<td>" + fmtDate(j.due) + "</td>" +
+      '<td class="num">' + fmtMoney(s.quoted) + "</td>" +
+      '<td class="num">' + fmtMoney(s.balanceDue) + "</td>" +
+      '<td class="num ' + (s.profit >= 0 ? "pos" : "neg") + '">' + fmtMoney(s.profit) + "</td>" +
+      '<td><button class="btn ghost small" onclick="event.stopPropagation();openJob(\'' + j.id + '\')">Open</button></td></tr>';
+  }).join("");
+}
+
+function openJob(id){ ui.selectedJobId = id; renderDetail(); showView("detail"); }
+
+function ledgerRows(job){
+  var rows = [];
+  (job.invoices||[]).forEach(function(e){ rows.push({date:e.date, type:"Invoice", label:e.note||"Invoice", amount:num(e.amount), kind:"invoice", id:e.id}); });
+  (job.payments||[]).forEach(function(e){ rows.push({date:e.date, type:"Payment received", label:e.note||"Payment", amount:num(e.amount), kind:"payment", id:e.id}); });
+  (job.expenses||[]).forEach(function(e){ rows.push({date:e.date, type:"Expense", label:(CATEGORIES[e.category]||"Other") + (e.note ? " — " + e.note : ""), amount:-num(e.amount), kind:"expense", id:e.id, category:e.category}); });
+  rows.sort(function(a,b){ return (a.date||"") < (b.date||"") ? -1 : 1; });
+  return rows;
+}
+
+function renderDetail(){
+  var job = findJob(ui.selectedJobId);
+  if(!job){ showView("jobs"); return; }
+  renderBrand();
+  var s = jobStats(job);
+  var overdue = isOverdue(job, todayISO());
+  var expByCat = {};
+  (job.expenses||[]).forEach(function(e){ expByCat[e.category] = round2((expByCat[e.category]||0) + num(e.amount)); });
+  var catHtml = Object.keys(expByCat).length
+    ? Object.keys(expByCat).map(function(k){ return "<tr><td>" + (CATEGORIES[k]||k) + '</td><td class="num">' + fmtMoney(expByCat[k]) + "</td></tr>"; }).join("")
+    : '<tr><td colspan="2" class="muted">No expenses logged yet.</td></tr>';
+
+  var rows = ledgerRows(job);
+  var ledgerHtml = rows.length ? rows.map(function(r){
+    var del = '<button class="btn ghost small" onclick="deleteEntry(\'' + r.kind + "','" + r.id + '\')">✕</button>';
+    return "<tr><td>" + fmtDate(r.date) + "</td><td>" + r.type + "</td><td>" + esc(r.label) + "</td>" +
+      '<td class="num ' + (r.amount >= 0 ? "pos" : "neg") + '">' + (r.amount >= 0 ? "+" : "−") + fmtMoney(Math.abs(r.amount)).slice(0) + "</td><td>" + del + "</td></tr>";
+  }).join("") : '<tr><td colspan="5" class="muted">Nothing logged yet — add an invoice, payment or expense below.</td></tr>';
+
+  $("detailBody").innerHTML =
+    '<div class="panel">' +
+      "<h2>" + esc(job.title) + (s.losing ? ' &nbsp;<span class="badge losing">LOSING MONEY</span>' : "") + "</h2>" +
+      '<p class="muted" style="margin:0 0 4px">' + esc(job.customer) + " · " + statusBadge(job) + (overdue ? "" : "") + "</p>" +
+      '<p class="small muted" style="margin:0 0 12px">Start: ' + fmtDate(job.start) + " · Due: " + fmtDate(job.due) + (job.notes ? " · " + esc(job.notes) : "") + "</p>" +
+      '<div class="kv">' +
+        "<div><div class='k'>Quoted</div><div class='v'>" + fmtMoney(s.quoted) + "</div></div>" +
+        "<div><div class='k'>Invoiced</div><div class='v'>" + fmtMoney(s.invoiced) + "</div></div>" +
+        "<div><div class='k'>Collected</div><div class='v'>" + fmtMoney(s.collected) + "</div></div>" +
+        "<div><div class='k'>Balance due</div><div class='v'>" + fmtMoney(s.balanceDue) + "</div></div>" +
+        "<div><div class='k'>Expenses</div><div class='v'>" + fmtMoney(s.expenses) + "</div></div>" +
+        "<div><div class='k'>Profit</div><div class='v " + (s.profit>=0?"pos":"neg") + "'>" + fmtMoney(s.profit) + "</div></div>" +
+        "<div><div class='k'>Margin</div><div class='v'>" + s.margin.toFixed(1) + "%</div></div>" +
+      "</div>" +
+      '<div class="toolbar" style="margin-top:10px">' +
+        '<button class="btn small" onclick="openMoneyModal(\'invoice\')">+ Invoice</button>' +
+        '<button class="btn small" onclick="openMoneyModal(\'payment\')">+ Payment</button>' +
+        '<button class="btn small" onclick="openMoneyModal(\'expense\')">+ Expense</button>' +
+      "</div>" +
+      "<h3>Ledger</h3>" +
+      '<div class="tablewrap"><table><thead><tr><th>Date</th><th>Type</th><th>Detail</th><th class="num">Amount</th><th></th></tr></thead><tbody>' + ledgerHtml + "</tbody></table></div>" +
+      "<h3>Expenses by category</h3>" +
+      '<table><tbody>' + catHtml + "</tbody></table>" +
+    "</div>";
+}
+
+/* ---------- Settings ---------- */
+function renderSettings(){
+  renderBrand();
+  $("setCompany").value = state.settings.company || "";
+  $("setTrade").value = state.settings.trade || "";
+  $("clearDemoBtn").disabled = !hasDemo();
+}
+function saveSettings(){
+  state.settings.company = $("setCompany").value.trim();
+  state.settings.trade = $("setTrade").value.trim();
+  saveState(); renderBrand(); toast("Settings saved");
+}
+
+/* ---------- Job CRUD ---------- */
+function openModal(id){ $(id).classList.add("open"); }
+function closeModal(id){ $(id).classList.remove("open"); }
+function openJobModal(editId){
+  var j = editId ? findJob(editId) : null;
+  $("jobModalTitle").textContent = j ? "Edit job" : "New job";
+  $("jobId").value = j ? j.id : "";
+  $("jobCustomer").value = j ? j.customer : "";
+  $("jobTitle").value = j ? j.title : "";
+  $("jobStatus").value = j ? j.status : "quoted";
+  $("jobQuoted").value = j ? j.quoted : "";
+  $("jobStart").value = j ? (j.start || "") : todayISO();
+  $("jobDue").value = j ? (j.due || "") : "";
+  $("jobNotes").value = j ? (j.notes || "") : "";
+  openModal("jobModal");
+}
+function saveJob(){
+  var customer = $("jobCustomer").value.trim(), title = $("jobTitle").value.trim();
+  if(!customer || !title){ toast("Customer and job title are required"); return; }
+  var id = $("jobId").value;
+  var data = { customer:customer, title:title, status:$("jobStatus").value,
+    quoted:num($("jobQuoted").value), start:$("jobStart").value, due:$("jobDue").value,
+    notes:$("jobNotes").value.trim() };
+  if(id){ var j = findJob(id); if(j) Object.assign(j, data); }
+  else { var nj = Object.assign({ id:uid(), invoices:[], payments:[], expenses:[] }, data); state.jobs.unshift(nj); ui.selectedJobId = nj.id; }
+  saveState(); closeModal("jobModal"); toast("Job saved");
+  if(ui.view === "detail") renderDetail(); else if(ui.view === "jobs") renderJobs(); else renderDashboard();
+}
+function deleteJob(id){
+  var j = findJob(id); if(!j) return;
+  if(!confirm("Delete job \u201C" + j.title + "\u201D and all its invoices, payments and expenses? This cannot be undone.")) return;
+  state.jobs = state.jobs.filter(function(x){ return x.id !== id; });
+  saveState(); toast("Job deleted"); showView("jobs");
+}
+
+/* ---------- Money entries ---------- */
+function openMoneyModal(kind){
+  $("moneyKind").value = kind; $("moneyId").value = "";
+  $("moneyModalTitle").textContent = kind === "invoice" ? "Add invoice" : kind === "payment" ? "Add payment received" : "Add expense";
+  $("moneyAmount").value = ""; $("moneyDate").value = todayISO(); $("moneyNote").value = "";
+  $("expenseCatWrap").style.display = kind === "expense" ? "" : "none";
+  openModal("moneyModal");
+}
+function saveMoney(){
+  var job = findJob(ui.selectedJobId); if(!job) return;
+  var kind = $("moneyKind").value, amount = num($("moneyAmount").value);
+  if(!(amount > 0)){ toast("Enter an amount greater than $0"); return; }
+  var entry = { id:uid(), amount:amount, date:$("moneyDate").value || todayISO(), note:$("moneyNote").value.trim() };
+  if(kind === "invoice") job.invoices.push(entry);
+  else if(kind === "payment") job.payments.push(entry);
+  else { entry.category = $("moneyCategory").value; job.expenses.push(entry); }
+  /* Helpful auto-status: fully collected invoiced jobs flip to Paid */
+  var s = jobStats(job);
+  if(kind === "payment" && s.invoiced > 0 && s.balanceDue === 0 && job.status === "invoiced") job.status = "paid";
+  saveState(); closeModal("moneyModal"); toast("Entry added"); renderDetail();
+}
+function deleteEntry(kind, entryId){
+  var job = findJob(ui.selectedJobId); if(!job) return;
+  if(!confirm("Remove this entry?")) return;
+  var list = kind === "invoice" ? job.invoices : kind === "payment" ? job.payments : job.expenses;
+  var i = list.findIndex(function(e){ return e.id === entryId; });
+  if(i >= 0) list.splice(i,1);
+  saveState(); renderDetail();
+}
+
+/* ---------- Demo / wipe ---------- */
+function clearDemoData(){
+  if(!hasDemo()){ toast("No demo data to clear"); return; }
+  if(!confirm("Remove the 3 sample jobs? Your own jobs stay untouched.")) return;
+  state.jobs = state.jobs.filter(function(j){ return !j.demo; });
+  state.demoSeeded = false;
+  saveState(); toast("Demo data cleared");
+  if(ui.view === "settings") renderSettings(); else renderDashboard();
+}
+function wipeAll(){
+  if(!confirm("Erase ALL data — every job, payment, expense and your settings? This cannot be undone.")) return;
+  if(!confirm("Are you sure? Export a JSON backup first if you want to be able to restore this data.")) return;
+  state = emptyState(); saveState(); toast("All data erased"); showView("dashboard");
+}
+
+/* ---------- JSON backup (the restorable one) ---------- */
+function normalizeImportedState(s){
+  if(!s.settings || typeof s.settings !== "object") s.settings = { company:"", trade:"" };
+  s.settings.company = String(s.settings.company || "");
+  s.settings.trade = String(s.settings.trade || "");
+  s.jobs.forEach(function(j){
+    j.invoices = Array.isArray(j.invoices) ? j.invoices : [];
+    j.payments = Array.isArray(j.payments) ? j.payments : [];
+    j.expenses = Array.isArray(j.expenses) ? j.expenses : [];
+    if(!STATUSES[j.status]) j.status = "quoted";
+  });
+  s.demoSeeded = !!s.demoSeeded;
+  return s;
+}
+function exportBackupJSON(){
+  var payload = { app:"jobprofit-tracker", version:1, exportedAt:new Date().toISOString(),
+                  settings: state.settings, jobs: state.jobs, demoSeeded: state.demoSeeded, legal: state.legal || null };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "jobprofit-tracker-backup-" + todayISO() + ".json";
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+  $("backupMsg").textContent = "Backup exported \u2014 keep that JSON file somewhere safe; Import backup can restore from it.";
+  toast("Backup exported");
+}
+function importBackupJSON(input){
+  var f = input.files && input.files[0]; if(!f) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    var parsed;
+    try { parsed = JSON.parse(reader.result); } catch(e){ parsed = null; }
+    if(!parsed || parsed.app !== "jobprofit-tracker" || !parsed.settings || typeof parsed.settings !== "object" || !Array.isArray(parsed.jobs)){
+      $("backupMsg").textContent = "That file is not a valid ProfitFlag backup \u2014 nothing was changed.";
+      toast("Invalid backup file \u2014 nothing changed");
+      return;
+    }
+    if(!confirm("Replace ALL current jobs and settings with this backup? This cannot be undone.")){
+      $("backupMsg").textContent = "Import cancelled \u2014 nothing was changed.";
+      return;
+    }
+    state = normalizeImportedState({ settings: parsed.settings, jobs: parsed.jobs, demoSeeded: parsed.demoSeeded, legal: parsed.legal || null });
+    saveState(); renderSettings();
+    $("backupMsg").textContent = "Backup restored \u2713 (" + state.jobs.length + " job(s)).";
+    toast("Backup restored");
+  };
+  reader.onerror = function(){ $("backupMsg").textContent = "Could not read that file \u2014 nothing was changed."; };
+  reader.readAsText(f);
+  input.value = "";
+}
+
+/* ---------- CSV export (spreadsheets only \u2014 not a backup) ---------- */
+function csvCell(v){
+  var s = String(v == null ? "" : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function downloadCSV(name, text){
+  var blob = new Blob([text], { type:"text/csv" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+}
+function exportJobsCSV(){
+  var head = ["Customer","Job","Status","Quoted","Invoiced","Collected","Expenses","Profit","Margin %","Balance Due","Start","Due","Notes"];
+  var lines = [head.join(",")];
+  state.jobs.forEach(function(j){
+    var s = jobStats(j);
+    lines.push([j.customer, j.title, STATUSES[j.status], s.quoted.toFixed(2), s.invoiced.toFixed(2),
+      s.collected.toFixed(2), s.expenses.toFixed(2), s.profit.toFixed(2), s.margin.toFixed(1),
+      s.balanceDue.toFixed(2), j.start||"", j.due||"", j.notes||""].map(csvCell).join(","));
+  });
+  downloadCSV("jobprofit-jobs.csv", lines.join("\n"));
+  toast("Jobs CSV downloaded");
+}
+function exportExpensesCSV(){
+  var head = ["Date","Customer","Job","Category","Amount","Note"];
+  var lines = [head.join(",")];
+  state.jobs.forEach(function(j){
+    (j.expenses||[]).forEach(function(e){
+      lines.push([e.date||"", j.customer, j.title, CATEGORIES[e.category]||e.category||"", num(e.amount).toFixed(2), e.note||""].map(csvCell).join(","));
+    });
+  });
+  downloadCSV("jobprofit-expenses.csv", lines.join("\n"));
+  toast("Expenses CSV downloaded");
+}
+
+/* ---------- Print statement ---------- */
+function printStatement(){
+  var job = findJob(ui.selectedJobId); if(!job) return;
+  var s = jobStats(job);
+  var company = state.settings.company || "ProfitFlag";
+  /* Customer statement shows charges & payments ONLY — internal expenses never leave the business. */
+  var rows = ledgerRows(job).filter(function(r){ return r.kind === "invoice" || r.kind === "payment"; }).map(function(r){
+    return "<tr><td>" + fmtDate(r.date) + "</td><td>" + r.type + "</td><td>" + esc(r.label) + '</td><td style="text-align:right">' + fmtMoney(r.amount) + "</td></tr>";
+  }).join("");
+  $("printArea").innerHTML =
+    '<div class="stmt-head"><div><h1>' + esc(company) + "</h1>" +
+    (state.settings.trade ? "<div>" + esc(state.settings.trade) + "</div>" : "") +
+    '<div>Job Statement</div></div>' +
+    "<div><div><b>Date:</b> " + fmtDate(todayISO()) + "</div><div><b>Status:</b> " + STATUSES[job.status] + "</div></div></div>" +
+    "<p><b>Customer:</b> " + esc(job.customer) + "<br><b>Job:</b> " + esc(job.title) + "<br>" +
+    "<b>Quoted price:</b> " + fmtMoney(s.quoted) + (job.due ? "<br><b>Due date:</b> " + fmtDate(job.due) : "") + "</p>" +
+    "<h2>Charges &amp; payments</h2>" +
+    "<table><thead><tr><th>Date</th><th>Type</th><th>Detail</th><th style='text-align:right'>Amount</th></tr></thead><tbody>" +
+    (rows || '<tr><td colspan="4">No charges or payments recorded.</td></tr>') + "</tbody></table>" +
+    "<h2>Summary</h2><table><tbody>" +
+    "<tr><td>Total invoiced</td><td style='text-align:right'>" + fmtMoney(s.invoiced) + "</td></tr>" +
+    "<tr><td>Total paid</td><td style='text-align:right'>" + fmtMoney(s.collected) + "</td></tr>" +
+    '<tr class="tot"><td>Balance due</td><td style="text-align:right">' + fmtMoney(s.balanceDue) + "</td></tr>" +
+    "</tbody></table>" +
+    "<p style='margin-top:22px;font-size:12px'>Thank you for your business.</p>";
+  window.print();
+}
+
+/* ---------- Help & support (§11): the Email-us link is rebuilt from
+   APP_VERSION at runtime, so a version bump can never leave a stale version
+   in the message. The static href in the HTML is only a no-JS fallback. ---------- */
+function syncHelpEmail(){
+  var a = document.getElementById("helpEmailBtn"); if(!a) return;
+  a.href = "mailto:whitewolfbackoffice@gmail.com?subject=" + encodeURIComponent("ProfitFlag help \u2014 v" + APP_VERSION) +
+    "&body=" + encodeURIComponent("Tell us what you were trying to do and what happened:\n\n");
+  var v = document.getElementById("helpVersionLine");
+  if(v) v.textContent = "ProfitFlag v" + APP_VERSION;
+}
+
+/* ---------- Init (browser only) ---------- */
+if(typeof document !== "undefined" && typeof window !== "undefined"){
+  document.addEventListener("DOMContentLoaded", function(){
+    syncHelpEmail();
+    renderBrand(); renderDashboard();
+    document.querySelectorAll(".modal-back").forEach(function(m){
+      m.addEventListener("click", function(e){ if(e.target === m) m.classList.remove("open"); });
+    });
+  });
+}
+/* Exported for the logic test harness (ignored by browsers). */
+if(typeof module !== "undefined" && module.exports){
+  module.exports = { jobStats: jobStats, totals: totals, isOverdue: isOverdue, fmtMoney: fmtMoney, demoData: demoData };
+}
+</script>
+
+<!-- ===== White Wolf Digital legal pattern (Terms v1.0) ===== -->
+<style>
+#legalOverlay{position:fixed;inset:0;z-index:99999;background:rgba(10,12,16,.72);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:18px 12px}
+#legalOverlay .legal-box{background:#fff;color:#14181f;max-width:560px;width:100%;border-radius:14px;padding:22px 20px;margin:auto;box-shadow:0 12px 40px rgba(0,0,0,.4);position:relative}
+#legalOverlay h2{margin:0 0 2px;font-size:22px}
+#legalOverlay h3{margin:0 0 12px;font-size:17px}
+#legalOverlay .legal-sum{font-size:16px;line-height:1.55;margin:10px 0}
+#legalOverlay .legal-sum p{margin:4px 0;font-weight:600}
+#legalOverlay .legal-note{background:#fff4d6;border:1px solid #e5c96a;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:14px}
+#legalAgreeBtn{min-height:52px;width:100%;font-size:17px;font-weight:700;margin-top:14px;cursor:pointer}
+#legalAgreeBtn:disabled{opacity:.45;cursor:not-allowed}
+#legalOverlay .legal-check{display:flex;gap:10px;align-items:flex-start;margin-top:16px;font-size:15px;line-height:1.45;cursor:pointer;text-align:left}
+#legalOverlay .legal-check input{width:22px;height:22px;min-width:22px;margin:2px 0 0;cursor:pointer}
+#legalOverlay .legal-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+#legalOverlay .legal-row button{min-height:48px;flex:1 1 200px;cursor:pointer;font-size:15px}
+#legalFullView{position:absolute;inset:0;background:#fff;border-radius:14px;display:none;flex-direction:column;overflow:hidden}
+#legalFullView .legal-full-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #ddd}
+#legalFullText{overflow:auto;padding:14px 18px;font-size:14.5px;line-height:1.55;text-align:left}
+#legalBackBtn{min-height:48px;min-width:88px;cursor:pointer;font-size:15px;font-weight:700}
+#legalCard{text-align:left;font-size:14.5px;line-height:1.55}
+#legalCard h3{margin:16px 0 6px}
+#legalCard ul{margin:6px 0 6px 18px;padding:0}
+#legalPageBtn{min-height:48px;cursor:pointer;font-size:15px;font-weight:700;width:100%}
+.legal-scrollbox{max-height:46vh;overflow:auto;border:1px solid #ddd;border-radius:8px;padding:10px 14px;margin-top:8px}
+</style>
+<script>
+"use strict";
+/* ===== Legal pattern: first-run Terms acceptance + Settings > Legal ===== */
+var TERMS_VERSION = "1.0";
+var LEGAL_APP_NAME = "ProfitFlag";
+var LEGAL_KEY = "jobprofit_tracker_v1";
+var LEGAL_KEYS = ["jobprofit_tracker_v1"];
+var LEGAL_GLOBAL = "state";
+var LEGAL_HAS_DISCLAIMER = false;
+var LEGAL_SETTINGS_SEL = "#view-settings";
+var LEGAL_TERMS_HTML = "<h2>Terms of Use \u2014 White Wolf Digital Apps</h2>\n<p><strong>Version 1.0 (DRAFT \u2014 pending attorney review)</strong> <strong>Seller: White Wolf Tree Service LLC, selling digital products under the name &quot;White Wolf Digital&quot;</strong> <strong>Contact: whitewolfbackoffice@gmail.com</strong></p>\n<h3>1. What you&#x27;re buying</h3>\n<p>Our apps (including ForgeFit AI, ForgeKitchen, TreeBid Pro, SnowBid, WashPrice Pro, RoofSquares, ProfitFlag, PastureLedger, and the other titles sold under White Wolf Digital) are single-file software tools. When you buy one, you are buying a <strong>license to use the file</strong>, not ownership of the software itself.</p>\n<h3>2. Your license</h3>\n<ul>\n<li>You may use the app for your own personal or business work.</li>\n<li>You may open it on your own devices (phone, tablet, computer) and move your own data between them using the app&#x27;s built-in backup/export tools.</li>\n<li>You may <strong>not</strong> resell, redistribute, give away, upload, or share the app file (or a copy of it) with anyone else \u2014 including posting it online, bundling it with other products, or selling access to it.</li>\n<li>You may <strong>not</strong> claim the app as your own work, remove its branding or notices, or use it to build a competing product for resale.</li>\n<li>One purchase = one buyer. A business purchase covers the buyer and their own employees using it for that business&#x27;s work; it does not cover other businesses.</li>\n</ul>\n<h3>3. Your data stays yours \u2014 and stays on your device</h3>\n<ul>\n<li>The current versions of our apps run <strong>entirely on your device</strong>. They have no accounts, no sign-in, no analytics, and they collect, transmit, and store <strong>none</strong> of your information on any server. We never see your data.</li>\n<li>Your records are stored in your browser/app storage on your device. **You are responsible for backing them up** using the app&#x27;s export tools. If you clear your browser data, lose your device, or uninstall the app, your records may be permanently lost, and we cannot recover them \u2014 we never had a copy.</li>\n<li>Files you export (backups, quotes, PDFs) are under your control. Where you store or send them is up to you.</li>\n</ul>\n<h3>4. Estimates are tools, not guarantees</h3>\n<p>Every number our apps produce \u2014 bids, prices, costs, calorie targets, projections, schedules, totals \u2014 is an <strong>estimate generated from the information you enter and the settings you choose</strong>. Outputs are aids for your own judgment, not guarantees of price, profit, outcome, or result. You are responsible for checking any output before relying on it (see also the disclaimer that applies to your app: Health Disclaimer for fitness/nutrition apps, Estimator Disclaimer for contractor tools). If an input is wrong, the output will be wrong.</p>\n<h3>5. Acceptable use</h3>\n<p>Don&#x27;t use the apps to break the law, infringe anyone&#x27;s rights, or misrepresent quotes, invoices, or records to your own customers. For the fitness apps, the guardrails in the app (healthy-rate limits, calorie floor) are part of the product \u2014 don&#x27;t treat the app as a way around them.</p>\n<h3>6. Provided &quot;as is&quot;</h3>\n<p>The apps are provided <strong>&quot;as is&quot; and &quot;as available,&quot; without warranties of any kind</strong>, express or implied \u2014 including merchantability, fitness for a particular purpose, accuracy of calculations, and uninterrupted or error-free operation \u2014 to the maximum extent allowed by law. Software has bugs; browsers change; we work to fix problems but do not promise any app is error-free or will work on every device or browser forever.</p>\n<h3>7. Limitation of liability</h3>\n<p>To the maximum extent allowed by law:</p>\n<ul>\n<li>We are **not liable for indirect, incidental, special, or consequential damages** \u2014 including lost profits, lost or mispriced jobs, lost data, or business interruption \u2014 arising from use of the apps.</li>\n<li>Our total liability for any claim connected to an app is limited to the <strong>amount you paid for that app</strong>.</li>\n<li>Nothing in these terms limits liability that cannot legally be limited.</li>\n</ul>\n<h3>8. Refunds</h3>\n<p>Refunds are handled <strong>by the storefront you bought from, under that storefront&#x27;s policy</strong> \u2014 Gumroad&#x27;s refund policy for Gumroad purchases, and Google Play&#x27;s refund policy for Play purchases. These terms do not add to, replace, or override the storefront&#x27;s refund rules. If a file is defective and won&#x27;t open, contact us at whitewolfbackoffice@gmail.com and we&#x27;ll fix or replace the file.</p>\n<h3>9. Updates and changes to these terms</h3>\n<ul>\n<li>We may release updated versions of an app. Updates may add, change, or remove features.</li>\n<li>We may update these terms. The version you agreed to is recorded in the app (version number and date) at first-run acceptance. If terms change, the app may ask you to accept the new version once on next open. Updated terms apply going forward, not retroactively.</li>\n<li>If you don&#x27;t agree to an updated version of the terms, stop using the app.</li>\n</ul>\n<h3>10. Governing law</h3>\n<p>These terms are governed by the laws of the <strong>State of Oklahoma</strong>, USA. (Attorney to confirm governing law and venue before publication.)</p>\n<h3>11. Contact</h3>\n<p>White Wolf Tree Service LLC (White Wolf Digital) \u2014 whitewolfbackoffice@gmail.com.</p>\n<h3>CONNECTED FEATURES \u2014 takes effect only when these features ship</h3>\n<p><em>The sections below apply only to future connected features (device sync via Health Connect, AI voice logging, and the AI Goal Preview in ForgeFit). They do not apply to the current offline versions, which never transmit data.</em></p>\n<ul>\n<li><strong>Opt-in only.</strong> Connected features are off by default. Each one asks for your separate, explicit consent \u2014 on its own consent screen, in plain language \u2014 before anything leaves your device. Declining never disables the app&#x27;s offline features.</li>\n<li><strong>What gets sent.</strong> Only what the consent screen names, only when you use the feature: for example, a meal description (text, or audio only if cloud transcription is on) for AI voice logging, or the single photo you choose for an AI Goal Preview.</li>\n<li><strong>No retention by us.</strong> Our relay service passes your request to the named AI provider and keeps nothing \u2014 no copies of your photos, audio, transcripts, or entries are stored on our servers. Provider handling is described on the consent screen and in the Privacy Policy.</li>\n<li><strong>Health data stays on the device.</strong> Device sync (Health Connect) reads your health data on your phone and stores it in the app on your phone. It is not uploaded to us.</li>\n<li><strong>Allowances.</strong> Some connected features run on third-party AI services we pay for per use, so they may include a monthly allowance described in the app (for example, a set number of AI previews or voice entries per month), with optional additional credits. Allowances and pricing will be shown in the app before you use the feature; they are not a subscription unless the app says so in plain words.</li>\n<li><strong>Permissions.</strong> Connected features may request device permissions (such as Health Connect access or the microphone) at the moment you first use them. You can revoke permissions any time in your device settings; the related feature will simply stop working.</li>\n</ul>";
+var LEGAL_DISC_HTML = "";
+var LEGAL_PRIVACY_HTML = "<h3>Privacy</h3><p>This app has no accounts and no sign-in. It collects no data, runs no analytics, and sends nothing anywhere &mdash; everything you enter is stored only on this device, in this browser/app storage. We never see your data. You are responsible for backing up your records with the app&rsquo;s export tools; files you export are under your control.</p>";
+var __legalRecord = null;
+var __legalOrigSet = localStorage.setItem.bind(localStorage);
+function __legalReadStored(){
+  try { var raw = localStorage.getItem(LEGAL_KEY); if(!raw) return null; var p = JSON.parse(raw); return (p && typeof p === "object") ? p : null; } catch(e){ return null; }
+}
+function __legalAdopt(rec){ if(rec && rec.termsVersion){ __legalRecord = { termsVersion: String(rec.termsVersion), acceptedDate: rec.acceptedDate || "", disclaimerShown: !!rec.disclaimerShown }; } }
+(function(){
+  var stored = __legalReadStored();
+  if (stored && stored.legal) __legalAdopt(stored.legal);
+})();
+/* Keep the acceptance inside the app's own saved state: adopt any legal record the app writes,
+   and re-attach the known record when an app save would otherwise drop it. */
+localStorage.setItem = function(k, v){
+  if (LEGAL_KEYS.indexOf(k) >= 0 && typeof v === "string"){
+    try {
+      var p = JSON.parse(v);
+      if (p && typeof p === "object" && !Array.isArray(p)){
+        if (p.legal) __legalAdopt(p.legal);
+        else if (__legalRecord && k === LEGAL_KEY){ p.legal = __legalRecord; v = JSON.stringify(p); }
+      }
+    } catch(e){}
+  }
+  return __legalOrigSet(k, v);
+};
+function __legalVersionOlder(a, b){
+  var pa = String(a||"0").split("."), pb = String(b||"0").split(".");
+  for (var i = 0; i < Math.max(pa.length, pb.length); i++){ var x = parseInt(pa[i]||"0",10)||0, y = parseInt(pb[i]||"0",10)||0; if (x < y) return true; if (x > y) return false; }
+  return false;
+}
+function __legalAcceptLine(){
+  if (__legalRecord && __legalRecord.acceptedDate) return "You agreed to Terms v" + __legalRecord.termsVersion + " on " + __legalRecord.acceptedDate + ".";
+  return "Terms acceptance not yet recorded.";
+}
+function __legalRenderAcceptLine(){
+  var el = document.getElementById("legalAcceptLine");
+  if (el) el.textContent = __legalAcceptLine();
+}
+function __legalBuildPage(){
+  var sec = document.querySelector(LEGAL_SETTINGS_SEL);
+  if (!sec || document.getElementById("legalCard")) return;
+  var wrap = document.createElement("div");
+  wrap.className = "card";
+  wrap.style.marginTop = "14px";
+  var discSection = LEGAL_HAS_DISCLAIMER ? '<h3>Estimator Disclaimer</h3><div class="legal-scrollbox">' + LEGAL_DISC_HTML + "</div>" : "";
+  wrap.innerHTML = '<h2>Legal</h2>'
+    + '<p><button type="button" id="legalPageBtn">Legal &mdash; Terms, ' + (LEGAL_HAS_DISCLAIMER ? "Disclaimer" : "") + ' &amp; Privacy</button></p>'
+    + '<div id="legalCard" style="display:none">'
+    + '<p id="legalAcceptLine"></p>'
+    + "<h3>Terms of Use</h3>" + '<div class="legal-scrollbox">' + LEGAL_TERMS_HTML + "</div>"
+    + discSection
+    + LEGAL_PRIVACY_HTML
+    + '<p><strong>Sold by:</strong> White Wolf Tree Service LLC (White Wolf Digital) &mdash; whitewolfbackoffice@gmail.com</p>'
+    + "</div>";
+  sec.appendChild(wrap);
+  document.getElementById("legalPageBtn").addEventListener("click", function(){
+    var card = document.getElementById("legalCard");
+    card.style.display = (card.style.display === "none") ? "block" : "none";
+    __legalRenderAcceptLine();
+    if (card.style.display === "block"){ try { card.scrollIntoView({block:"start"}); } catch(e){} }
+  });
+  __legalRenderAcceptLine();
+}
+function __legalShowFull(kind){
+  var fv = document.getElementById("legalFullView");
+  var ft = document.getElementById("legalFullText");
+  var fh = document.getElementById("legalFullTitle");
+  if (!fv || !ft) return;
+  if (kind === "disclaimer"){ ft.innerHTML = LEGAL_DISC_HTML; if (fh) fh.textContent = "Estimator Disclaimer"; }
+  else { ft.innerHTML = LEGAL_TERMS_HTML; if (fh) fh.textContent = "Terms of Use"; }
+  fv.style.display = "flex";
+  ft.scrollTop = 0;
+}
+function __legalMaybePrompt(){
+  var stored = __legalReadStored();
+  var rec = stored && stored.legal ? stored.legal : null;
+  if (rec) __legalAdopt(rec);
+  var need = false, updated = false;
+  if (!rec) need = true;
+  else if (__legalVersionOlder(rec.termsVersion, TERMS_VERSION)){ need = true; updated = true; }
+  var ov = document.getElementById("legalOverlay");
+  if (!ov) return;
+  if (need){
+    var note = document.getElementById("legalUpdatedNote");
+    if (note) note.style.display = updated ? "block" : "none";
+    var chk0 = document.getElementById("legalAgreeCheck");
+    var ab0 = document.getElementById("legalAgreeBtn");
+    if (chk0) chk0.checked = false;
+    if (ab0) ab0.disabled = true;
+    ov.style.display = "flex";
+  } else {
+    ov.style.display = "none";
+  }
+  __legalRenderAcceptLine();
+}
+function __legalAgree(){
+  var chkA = document.getElementById("legalAgreeCheck");
+  if (chkA && !chkA.checked) return;
+  var d = new Date();
+  var iso = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  __legalRecord = { termsVersion: TERMS_VERSION, acceptedDate: iso, disclaimerShown: LEGAL_HAS_DISCLAIMER };
+  try { var g = window[LEGAL_GLOBAL]; if (g && typeof g === "object") g.legal = __legalRecord; } catch(e){}
+  try {
+    var stored = __legalReadStored();
+    if (stored){ stored.legal = __legalRecord; __legalOrigSet(LEGAL_KEY, JSON.stringify(stored)); }
+    else { var g2 = window[LEGAL_GLOBAL]; if (g2 && typeof g2 === "object") __legalOrigSet(LEGAL_KEY, JSON.stringify(g2)); }
+  } catch(e){}
+  var ov = document.getElementById("legalOverlay");
+  if (ov) ov.style.display = "none";
+  __legalRenderAcceptLine();
+}
+function __legalBuildOverlay(){
+  if (document.getElementById("legalOverlay")) return;
+  var ov = document.createElement("div");
+  ov.id = "legalOverlay";
+  ov.style.display = "none";
+  var discBtn = LEGAL_HAS_DISCLAIMER ? '<button type="button" id="legalDisclaimerBtn">Read the Estimator Disclaimer</button>' : "";
+  var followLine = LEGAL_HAS_DISCLAIMER
+    ? "The full Terms and Disclaimer are one tap away, now and any time in Settings &rarr; Legal."
+    : "The full Terms are one tap away, now and any time in Settings &rarr; Legal.";
+  var checkLabel = LEGAL_HAS_DISCLAIMER
+    ? "I have read the disclaimer and I agree to the Terms of Use"
+    : "I have read and I agree to the Terms of Use";
+  ov.innerHTML = '<div class="legal-box" role="dialog" aria-modal="true" aria-label="Terms of Use">'
+    + "<h2>" + LEGAL_APP_NAME + "</h2><h3>Terms of Use</h3>"
+    + '<div class="legal-note" id="legalUpdatedNote" style="display:none">Our terms were updated (v' + TERMS_VERSION + ").</div>"
+    + '<div class="legal-sum"><p>Your data stays on your device.</p>'
+    + "<p>Estimates are aids, not guarantees.</p>"
+    + "<p>You're responsible for checking outputs before you rely on them.</p></div>"
+    + "<p>" + followLine + "</p>"
+    + '<div class="legal-row"><button type="button" id="legalTermsBtn">Read the full Terms</button>' + discBtn + "</div>"
+    + '<label class="legal-check"><input type="checkbox" id="legalAgreeCheck"> <span>' + checkLabel + '</span></label>'
+    + '<button type="button" id="legalAgreeBtn" disabled>I Agree</button>'
+    + '<div id="legalFullView"><div class="legal-full-head"><button type="button" id="legalBackBtn">&larr; Back</button><strong id="legalFullTitle">Terms of Use</strong></div><div id="legalFullText"></div></div>'
+    + "</div>";
+  document.body.appendChild(ov);
+  document.getElementById("legalAgreeBtn").addEventListener("click", __legalAgree);
+  var agreeChk = document.getElementById("legalAgreeCheck");
+  var agreeBtn = document.getElementById("legalAgreeBtn");
+  if (agreeChk && agreeBtn) agreeChk.addEventListener("change", function(){ agreeBtn.disabled = !agreeChk.checked; });
+  document.getElementById("legalTermsBtn").addEventListener("click", function(){ __legalShowFull("terms"); });
+  var db = document.getElementById("legalDisclaimerBtn");
+  if (db) db.addEventListener("click", function(){ __legalShowFull("disclaimer"); });
+  document.getElementById("legalBackBtn").addEventListener("click", function(){ document.getElementById("legalFullView").style.display = "none"; });
+}
+__legalBuildOverlay();
+__legalBuildPage();
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ __legalBuildOverlay(); __legalBuildPage(); __legalMaybePrompt(); });
+else __legalMaybePrompt();
+</script>
+
+<script>
+/* ============================================================================
+   SHARED VOICE DICTATION LAYER — "vv" snippet v1.0 (2026-10-29)
+   Governing standard: QA-STANDARD.md §9a (mic dictation on every data-entry
+   field). Built once, dropped into every catalog app verbatim. Do not fork
+   per app — fix here and re-drop.
+
+   What it does:
+   - Adds a >=48px mic button beside every text input, number input, and
+     textarea (an <input> with no type attribute counts as text). Selects,
+     checkboxes, radios, file/date/tel/email inputs are NOT wired — they keep
+     their native pickers/keyboards (per voice-retrofit-plan.md counting).
+   - Tap the mic -> Web Speech API dictation into that field, exactly as if
+     typed. Interim words show live in the field; nothing auto-submits.
+   - Number fields: spoken numbers are converted ("sixty five" -> 65,
+     "two point five" -> 2.5, "1,200" -> 1200). If the words can't be read as
+     a number, the field is left untouched and the user is told plainly.
+   - After a successful dictation the field receives real bubbling "input"
+     and "change" events, so the host app's own handlers fire exactly as if
+     the user typed.
+   - Fields added later (re-renders, add-row buttons) are wired automatically
+     via MutationObserver.
+   - No SpeechRecognition (Firefox, file:// copies in most browsers, denied
+     permission): the mic shows the honest note "Voice isn't available on
+     this device/browser — typing works as always" and typing is never
+     blocked, hidden, or degraded.
+   - Failed/empty recognition announces "Didn't catch that — try again or
+     type it" and restores the field's previous value.
+
+   Wiring (see README.md in this folder): paste this whole IIFE in a <script>
+   block just before </body>. It injects its own styles (#vv-style) — no
+   other changes needed. It never touches storage, prices, or app state.
+   ============================================================================ */
+(function () {
+  "use strict";
+  if (window.__vvDictation) return; // drop-in twice = wire once
+  window.__vvDictation = "1.0";
+
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  var FALLBACK_MSG = "Voice isn't available on this device/browser — typing works as always";
+  var MISSED_MSG = "Didn't catch that — try again or type it";
+  var BLOCKED_MSG = "Microphone is blocked — typing works as always. Check the browser's mic permission if you want voice.";
+
+  /* ---- styles (self-injected; dictation-snippet.css holds the same rules) ---- */
+  var CSS = [
+    ".vv-wrap{display:flex;gap:6px;align-items:flex-start}",
+    ".vv-wrap>input,.vv-wrap>textarea{flex:1 1 0;min-width:0}",
+    ".vv-mic{flex:0 0 auto;width:48px;min-width:48px;height:48px;border-radius:8px;border:1px solid #b9c2ba;background:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent}",
+    ".vv-mic:active{transform:scale(.96)}",
+    ".vv-mic.vv-live{background:#b3372e;border-color:#b3372e;animation:vvpulse 1s ease-in-out infinite}",
+    "@keyframes vvpulse{0%,100%{opacity:1}50%{opacity:.5}}",
+    ".vv-status{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);max-width:min(92vw,480px);background:#1c2420;color:#fff;padding:10px 14px;border-radius:9px;font-size:14px;line-height:1.35;z-index:99999;box-shadow:0 4px 18px rgba(0,0,0,.25);display:none;text-align:center;pointer-events:none}",
+    ".vv-status.vv-show{display:block}",
+    "@media print{.vv-mic{display:none!important}.vv-status{display:none!important}}"
+  ].join("\n");
+  if (!document.getElementById("vv-style")) {
+    var st = document.createElement("style");
+    st.id = "vv-style"; st.textContent = CSS;
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  /* ---- status announcements ---- */
+  var statusEl = null, statusTimer = null;
+  function say(msg, ms) {
+    if (!statusEl) {
+      statusEl = document.createElement("div");
+      statusEl.className = "vv-status"; statusEl.setAttribute("role", "status");
+      statusEl.setAttribute("aria-live", "polite");
+      document.body.appendChild(statusEl);
+    }
+    statusEl.textContent = msg;
+    statusEl.classList.add("vv-show");
+    if (statusTimer) clearTimeout(statusTimer);
+    statusTimer = setTimeout(function () { statusEl.classList.remove("vv-show"); }, ms || 5000);
+  }
+
+  /* ---- spoken-number conversion ---- */
+  var ONES = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+  var TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+  function wordsToNumber(s) {
+    var words = s.split(/[\s-]+/), total = 0, current = 0, seen = false, decimal = null, decPlace = 0.1, neg = false;
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (!w || w === "and") continue;
+      if (w === "minus" || w === "negative") { neg = true; continue; }
+      if (w === "point") { decimal = true; continue; }
+      if (decimal) {
+        if (ONES.hasOwnProperty(w) && ONES[w] < 10) { if (decimal === true) decimal = 0; decimal += ONES[w] * decPlace; decPlace /= 10; seen = true; }
+        continue;
+      }
+      if (ONES.hasOwnProperty(w)) { current += ONES[w]; seen = true; }
+      else if (TENS.hasOwnProperty(w)) { current += TENS[w]; seen = true; }
+      else if (w === "hundred") { current = (current || 1) * 100; seen = true; }
+      else if (w === "thousand") { total += (current || 1) * 1000; current = 0; seen = true; }
+      else if (w === "million") { total += (current || 1) * 1000000; current = 0; seen = true; }
+      else if (w === "a" || w === "an") { /* filler before hundred/thousand */ }
+      /* any other word (dollars, feet, hours…) is ignored filler */
+    }
+    if (!seen) return null;
+    var n = total + current + (decimal ? decimal : 0);
+    return neg ? -n : n;
+  }
+  function parseSpokenNumber(raw) {
+    if (!raw) return null;
+    var s = String(raw).toLowerCase().replace(/\$/g, " ").replace(/\s+/g, " ").trim();
+    s = s.replace(/(\d),(?=\d)/g, "$1").replace(/,/g, " "); // 1,200 -> 1200
+    var m = s.match(/-?\d+(?:\.\d+)?/);
+    if (m) { var n = parseFloat(m[0]); if (isFinite(n)) return n; }
+    return wordsToNumber(s);
+  }
+
+  /* ---- field helpers ---- */
+  function isWirable(f) {
+    if (!f || f.dataset.vvWired) return false;
+    if (f.tagName === "TEXTAREA") return !(f.disabled || f.readOnly);
+    if (f.tagName !== "INPUT") return false;
+    var t = (f.getAttribute("type") || "text").toLowerCase();
+    if (t !== "text" && t !== "number") return false;
+    return !(f.disabled || f.readOnly);
+  }
+  function labelFor(f) {
+    var name = "";
+    if (f.id) {
+      var lab = document.querySelector('label[for="' + f.id + '"]');
+      if (lab) name = lab.textContent;
+    }
+    if (!name) {
+      var prev = f.closest ? f.closest("div") : null;
+      var l2 = prev ? prev.querySelector("label") : null;
+      if (l2) name = l2.textContent;
+    }
+    if (!name) name = f.getAttribute("placeholder") || f.getAttribute("name") || "field";
+    return String(name).replace(/\s+/g, " ").trim().slice(0, 60) || "field";
+  }
+  function fireEvents(f) {
+    ["input", "change"].forEach(function (type) {
+      var ev;
+      try { ev = new Event(type, { bubbles: true, composed: true }); }
+      catch (e) { ev = document.createEvent("Event"); ev.initEvent(type, true, true); }
+      f.dispatchEvent(ev);
+    });
+  }
+  function joinText(base, add) {
+    if (!base) return add;
+    if (!add) return base;
+    return base + (/\s$/.test(base) ? "" : " ") + add;
+  }
+
+  /* ---- dictation session ---- */
+  var active = null; // { rec, field, btn, base, finalText, gotResult, done }
+  function stopActive() { if (active && active.rec) { try { active.rec.stop(); } catch (e) {} } }
+  function startDictation(field, btn) {
+    if (active && active.field === field) { stopActive(); return; } // tap again = stop
+    if (active) stopActive();
+    if (!SR) { say(FALLBACK_MSG, 6000); return; }
+    var rec;
+    try { rec = new SR(); } catch (e) { say(FALLBACK_MSG, 6000); return; }
+    var session = { rec: rec, field: field, btn: btn, base: field.value || "", finalText: "", gotResult: false, done: false };
+    active = session;
+    rec.lang = (document.documentElement.getAttribute("lang") || "en-US");
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    btn.classList.add("vv-live");
+    btn.setAttribute("aria-label", "Listening — tap to stop");
+    say("Listening… speak now.");
+    rec.onresult = function (ev) {
+      var interim = "", finalT = "";
+      for (var i = ev.resultIndex; i < ev.results.length; i++) {
+        var r = ev.results[i];
+        if (r.isFinal) finalT += r[0].transcript; else interim += r[0].transcript;
+      }
+      if (finalT) { session.finalText = joinText(session.finalText, finalT.trim()); session.gotResult = true; }
+      var shown = joinText(session.finalText, interim.trim());
+      if (field.type !== "number") field.value = joinText(session.base, shown);
+      else if (shown) field.value = shown; // numbers: show the words until they resolve on end
+    };
+    rec.onerror = function (ev) {
+      if (session.done) return;
+      session.done = true;
+      field.value = session.base;
+      cleanup(session);
+      if (ev && (ev.error === "not-allowed" || ev.error === "service-not-allowed")) say(BLOCKED_MSG, 6500);
+      else if (ev && ev.error === "not-supported") say(FALLBACK_MSG, 6000);
+      else say(MISSED_MSG, 5000);
+    };
+    rec.onend = function () {
+      if (session.done) return;
+      session.done = true;
+      cleanup(session);
+      var heard = (session.finalText || "").trim();
+      if (!heard) { field.value = session.base; say(MISSED_MSG, 5000); return; }
+      if (field.type === "number") {
+        var n = parseSpokenNumber(heard);
+        if (n === null || !isFinite(n)) { field.value = session.base; say(MISSED_MSG, 5000); return; }
+        field.value = String(n);
+      } else {
+        field.value = joinText(session.base, heard);
+      }
+      fireEvents(field);
+      try { field.focus({ preventScroll: false }); } catch (e) {}
+      say("Added: " + heard, 3000);
+    };
+    try { rec.start(); } catch (e) { session.done = true; cleanup(session); field.value = session.base; say(MISSED_MSG, 5000); }
+  }
+  function cleanup(session) {
+    if (active === session) active = null;
+    if (session.btn) { session.btn.classList.remove("vv-live"); session.btn.setAttribute("aria-label", session.btn.dataset.vvLabel || "Voice entry"); }
+  }
+
+  /* ---- wiring ---- */
+  function wireField(f) {
+    if (!isWirable(f)) return;
+    f.dataset.vvWired = "1";
+    var wrap = document.createElement("span");
+    wrap.className = "vv-wrap";
+    f.parentNode.insertBefore(wrap, f);
+    wrap.appendChild(f);
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "vv-mic";
+    btn.innerHTML = "🎤";
+    var lab = "Voice entry for " + labelFor(f);
+    btn.dataset.vvLabel = lab;
+    btn.setAttribute("aria-label", lab);
+    btn.title = "Voice entry";
+    btn.addEventListener("click", function () { startDictation(f, btn); });
+    wrap.appendChild(btn);
+  }
+  function scan(root) {
+    if (!root || !root.querySelectorAll) return;
+    var fields = root.querySelectorAll("input, textarea");
+    for (var i = 0; i < fields.length; i++) wireField(fields[i]);
+    if (root.tagName && (root.tagName === "INPUT" || root.tagName === "TEXTAREA")) wireField(root);
+  }
+
+  function init() {
+    scan(document);
+    if (window.MutationObserver && document.body) {
+      var pending = false;
+      var obs = new MutationObserver(function (muts) {
+        var hasAdds = false;
+        for (var i = 0; i < muts.length; i++) if (muts[i].addedNodes.length) { hasAdds = true; break; }
+        if (!hasAdds || pending) return;
+        pending = true;
+        setTimeout(function () { pending = false; scan(document); }, 60);
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+
+  /* exposed for QA harnesses and future Tell flows */
+  window.__vv = { version: "1.0", supported: !!SR, parseSpokenNumber: parseSpokenNumber, fallbackMessage: FALLBACK_MSG, missedMessage: MISSED_MSG };
+})();
+</script>
+</body>
+</html>
